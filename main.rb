@@ -50,22 +50,31 @@ class Finestra
                  
                    @search.signal_connect "activate" do |_widget|
                         puts "LLEGO"
-                        timer.stop
-                        timer.restart
-                        timer.start
+                        @timer.stop
+                        @timer.reset
+                        @timer.start
                         t = Thread.new{
                       
                         @url = 'http://172.20.10.2:4344?' + @search.text                                   
                         @resposta = HTTPX.get(@url).to_str
-                      #  puts @resposta
+                        puts @resposta
                         t.exit
                         }
                         t.join
                         #FALTA: Borrar taula ja existent si existeix
+                         if @resposta.to_str != 'error' 
+                         
                          @taula = Taula.new.crearTaula(@resposta)
+                         if @taula != nil
                          @grid.attach(@taula,0,2,10,10)
                          @window.show_all
-                         
+                        else
+                        puts "empty set"
+                        end
+                        else
+                        puts  "error in sql comprobation"
+                        end
+                        
                  end
               
                 
@@ -95,6 +104,8 @@ end
         
         req=HTTPX.get('http://172.20.10.2:4344?d?').to_str
         puts req #disconnected
+        @timer.stop
+        @timer.reset
         #volver a la startWindow. eliminar Tablas actuales y volver a poner todo como estaba. Yo no sé
         startWindow
         
@@ -163,6 +174,7 @@ end
       def timer_manage
         @timer = Timer.new(10){
                puts "10 seconds"
+               req=HTTPX.get('http://172.20.10.2:4344?d?').to_str
                startWindow
                #De nou aqui hem deliminar la taula que hi hagi i ficar la finestra original
         }
