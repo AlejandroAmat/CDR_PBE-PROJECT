@@ -29,6 +29,7 @@ if(req.method =='GET'){
     if(disc[1]=="d"){
     user="";
     res.end("disconnected");
+    console.log("disconnected")
     }
     else{
 
