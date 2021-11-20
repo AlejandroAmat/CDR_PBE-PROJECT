@@ -5,10 +5,11 @@ require "json"
 require "puzzle1"
 require_relative "taula"
 #require 'i2c/drivers/lcd'
-require 'timer'
+require 'facets/timer'
 
 class Finestra 
         attr_accessor :label, :window, :grid, :blau, :blanc, :vermell, :lector, :uid, :button, :search, :taula
+        @timer
         
         def initialize
                 #Variables d'interès
@@ -24,7 +25,7 @@ class Finestra
                 #Configuració de la finestra
                 @window = Gtk::Window.new("Critical Design")
                 @window.set_title("Lector MFRC522")
-                @window.set_default_size(200,200)
+                @window.set_default_size(400,400)
                 @window.set_border_width(10)
                 @window.set_window_position(:CENTER)
                 @window.signal_connect('destroy') { Gtk.main_quit }
@@ -49,12 +50,14 @@ class Finestra
                  
                    @search.signal_connect "activate" do |_widget|
                         puts "LLEGO"
-                        
+                        timer.stop
+                        timer.restart
+                        timer.start
                         t = Thread.new{
                       
                         @url = 'http://172.20.10.2:4344?' + @search.text                                   
                         @resposta = HTTPX.get(@url).to_str
-                        puts @resposta
+                      #  puts @resposta
                         t.exit
                         }
                         t.join
@@ -92,8 +95,8 @@ end
         
         req=HTTPX.get('http://172.20.10.2:4344?d?').to_str
         puts req #disconnected
-        #volver a la startWindow. Por hacer::eliminar Tablas actuales y volver a poner todo como estaba. Yo no sé
-        startWindow  #Esto solo vuelve a llamar al thread de read_uid pero no pone la ventana original ni nada. Solo el label.
+        #volver a la startWindow. eliminar Tablas actuales y volver a poner todo como estaba. Yo no sé
+        startWindow
         
         
       end
@@ -122,10 +125,11 @@ end
                 
                 else
                         puts "WELCOME " + resposta
+                        timer_manage
                         initPageBuilder
                         
                         #@display.clear
-                        # @display.text('      Welcome:',0)
+                       # @display.text('      Welcome:',0)
                         #@display.text(resposta,1)
                         #@timer.start
                 end
@@ -150,14 +154,21 @@ end
                 
                 @grid.attach(@button,1,0,9,1)
                 @grid.attach(@label,0,0,1,1)
-                @grid.set_row_spacing(100)
+                @grid.set_row_spacing(20)
                 @grid.attach(@search,0,7,10,1)
                 @window.add(@grid)
 		@window.show_all
       end 
 
+      def timer_manage
+        @timer = Timer.new(10){
+               puts "10 seconds"
+               startWindow
+               #De nou aqui hem deliminar la taula que hi hagi i ficar la finestra original
+        }
+        @timer.start
 
-                
+           end     
     end           
                 
                        
