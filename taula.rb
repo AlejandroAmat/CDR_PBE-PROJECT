@@ -7,10 +7,13 @@ class Taula
   @columnes=0
   def crearTaula(raw_data)
     #puts raw_data
+    
+    
     json = JSON.parse(raw_data)
     resp = json["result"]
     puts resp
    @files = resp.size
+    if @files!=0
     @columnes = resp[0].size
     puts @files
     puts @columnes
@@ -30,7 +33,9 @@ class Taula
         puts "labels"
         i=i+1
       end
-  return @taula
+      return @taula
+  end
+  return nil
   end
   
   def crearLabels(hash)
