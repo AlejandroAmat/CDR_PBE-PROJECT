@@ -3,11 +3,12 @@ require 'gtk3'
 
 class Taula
   attr_accessor :taula
-  @files =0
-  @columnes=0
+  @files 
+  @columnes
   def crearTaula(raw_data)
     #puts raw_data
-    
+    @files=0
+    @columnes=0
     
     json = JSON.parse(raw_data)
     resp = json["result"]
@@ -73,9 +74,11 @@ class Taula
   end
   
 end
-
+  def numFiles
+      return @files
 end
 
+end
 
 
 
