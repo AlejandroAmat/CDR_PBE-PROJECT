@@ -1,39 +1,40 @@
-http = require('http');
+//incorporamos la gema http, mysql y url para tratar la información
+http = require('http');  
 //const express = require ('express');
 var mysql = require('mysql');
 const url = require ('url');
-require('dotenv').config();
+//require('dotenv').config();
 var a =0;
 var timetablee =0;
 var tim=0;
 //const d = require('dateformat'); descargar
 
-const hostname = "172.20.10.2";
-const port =  4344;
-var user= ''; //Contemplo que ja esta iniciat sessió
+const hostname = "172.20.10.2";  //ip a la que se debe conectar
+const port =  4344;  //Escucha del puerto 4344
+var user= ''; //Usuario activo. Consideramos que solo existe uno a la vez. Así en el cliente no tiene que enviarse en cada request() el nombre. 
 
-function manage( req, res){  //funció que gestiona les peticions de clients
-if(req.method =='GET'){
+function manage( req, res){  //funció que gestiona las peticiones
+if(req.method =='GET'){   //contempla get requests
 
   req.on('error',(err)=>{
     console.error(err);
 
-  })
+ })
    req.on('data',(chunk)=>{
 
-   });
+ });
 
-   req.on('end', ()=>{   //tota la funcionalitat es troba en quan acaba la petició
+    req.on('end', ()=>{   //Toda la funcionaldad se encuentra cuando finaliza la petición
 
-    var disc = req.url.split("?");
+    var disc = req.url.split("?");  //dividimos el url recibido para analizar si se trata de una desconexión. Desconectamos al usuario activo.
     if(disc[1]=="d"){
     user="";
     res.end("disconnected");
     console.log("disconnected")
     }
-    else{
+    else{     // en caso de no tratarse de desconexión, dos casos: Conexión o acceso a la base de datos.
 
-     if(user==''){
+      if(user==''){
       var stringname;
       var uid = req.url.split("?"); //separo el url per obtenir el uid
       var qq = "SELECT name FROM Students WHERE U_ID = '" + uid[1]+ "'"; //creo consulta SQL
@@ -41,81 +42,74 @@ if(req.method =='GET'){
       con.query(qq, function(err,result){  //consulta SQL
       if(err) throw err;
 
-      stringname = JSON.stringify(result); //passem a string el objecte
+      stringname = JSON.stringify(result); //pasamos a string el objeto JScript
       console.log(stringname);
-if(stringname=="[]") res.end("error");
-else{
-      final = JSON.parse(stringname); //pasem a JSON el string
+      if(stringname=="[]") res.end("error");  //si no existe el usuario devuelve error
+      else{
+      final = JSON.parse(stringname); //pasamos a JSON el string para poder extraer info más fácil
       console.log(final);
-      user = final[0].name.toString(); //agafem del Json la row 0 i el name, que sera usuari actual
+      user = final[0].name.toString(); //cogemos del Json la row 0 i el name, que sera usuario actual
       res.statusCode=200;
-      //res.setHeader('Content_Type','aplication/json');
+      res.setHeader('Content_Type','aplication/json');
 
-      //var baina = "'"+ stringname + "'";
+      
+      //var data= "{"+ '"result":' + stringname + "}";
+      res.end(user);  //devolvemos nombre de usuario
 
-      var data= "{"+ '"result":' + stringname + "}";
-      res.end(user);
+      }
 
-}
+      });
 
-       });
-
-     }
+    }
 else{
 
-     //querys//
+    //querys//
      var url = req.url.split("?");
-      var all = 1;
-      var lim= 0;
+     var all = 1;
+     var lim= 0;
      console.log(url);
 
-     if(url.length>=3){ //comprovem si te restriccions
+     if(url.length>=3){ //comprobamos si existen restricciones o si solo se accede a la tabla
       all = 0;
-     var params = url[2].split("&");
-     console.log(params);
-   }
-   console.log(all);
-     var query = "SELECT ";
-     var querfinal = "";
-     var logout=0;
-     switch(url[1]){ //mirem quina taula és
-       case 'marks':
-       query+="subject, name, mark";
-       querfinal=" ORDER BY subject ASC";
-       break;
-       case 'timetable': //"day , hour, subject, room";//
+      var params = url[2].split("&");
+      console.log(params);
+      }
+      console.log(all);
+      var query = "SELECT ";
+      var querfinal = "";
+      var logout=0;
+      switch(url[1]){ //miramos tabla, creamos el Select y los atributos y cramos el query final que será el ORDER BY.
+        case 'marks':
+        query+="subject, name, mark";
+        querfinal=" ORDER BY subject ASC";
+        break;
+        case 'timetable': 
         query += "day, hour, subject, room";
 
         var date = new Date();
-        var hour =  date.toTimeString().substr(0,5);
-         //get only houy;
-         var dayint = date.getDay() -1;
-       //dayint = 2;
+        var hour =  date.toTimeString().substr(0,5); //miramos que día y hora es para poder hacer el orderBy. 
+         
+        var dayint = date.getDay() -1;
+        //dayint = 2;
         if(dayint>4) dayint = 0;
 
         querfinal = "ORDER BY CASE when daynum = "+ dayint +  " and hour >= '" + hour +"' then 0 when daynum = "+ (dayint+1)%5 +" then 1 when daynum= "+ (dayint+2)%5 +" then 2 when daynum= "+ (dayint+3)%5 +" then 3 when daynum= "+ (dayint+4)%5 +" then 4 when daynum";
         querfinal += "= " + dayint +" AND hour< '" + hour + "' then 5 end";
         break;
-       case 'tasks': query += "date, subject, name";
-       querfinal=" ORDER BY date ASC";
-       break;
-       case 'logout': logout= 1;
-       break;
-       default: break;
+        case 'tasks': query += "date, subject, name";
+        querfinal=" ORDER BY date ASC";
+        break;
+        case 'logout': logout= 1;
+        break;
+        default: break;
      }
 
-    query+= " FROM "+ url[1] + " WHERE student = '" + user + "'"; //creem query SQL
+    query+= " FROM "+ url[1] + " WHERE student = '" + user + "'"; //añadimos From a la sentencia SQL con el parametro de tabla y usuario
 
-    if(all!=1){ //mirem resta de restriccions!!!
-    for(const element of params){
+    if(all!=1){   //si existen restricciones iteramos por todas, analizando cada caso y sumándolas a las sentencias SQL
+    for(const element of params){   
      var p = element.split("=");
-      //comprobar que no sea limit
-      //comprobar que no sea [gte]  o [lte]
-      //comprobar las que son int o las que son string
-      //query+= " AND " + p[0] + " = '" + p[1] +"'";
-      console.log("baina");
-
-      switch (p[0]){
+       switch (p[0]){
 
            case 'name': query+= " AND " + p[0] + " = '" + p[1] + "'";
            break;
@@ -124,14 +118,12 @@ else{
            case 'subject': query+= " AND " + p[0] + " = '" + p[1] + "'";
            break;
            case 'limit':
-           lim = 1;
+           lim = 1;  //en caso de haber un limit el order by se debe hacer antes por tanto es necesario saber cuándo es limit y cuándo no.
            query+= querfinal;
            query+=  " LIMIT " +  p[1];
            break;
            case 'date':
-           //'date':  var date= new Date(p[1]);
            query+= " AND date "  + ' = "' + p[1]+ '"';
-          // console.log(p[1]);
            break;
            case 'day': query+= " AND " + p[0] + " = '" + p[1] + "'";
            break;
@@ -145,18 +137,14 @@ else{
            break;
            case 'hour[gte]': query+= " AND hour " + " >= '";
            query+= p[1] + "'";
-           //.formt(dd/mm/aa); //no se si esta be aixo hauras de probaro
            break;
            case 'hour[lt]': query+= " AND hour " + " < '";
            query+= p[1] + "'";
-           //.formt(dd/mm/aa); //no se si esta be aixo hauras de probaro
            break;
-
-
-           case 'date[gte]': query+= " AND date" + " >= DATE '";
+           case 'date[gte]': query+= " AND date" + " >= DATE '"; //en el caso de las dtes es necesario comprobar si es now, ya que el formato de Date es complejo
            if(p[1]=="now"){
              var now = new Date();
-              query += now.toISOString().split('T')[0] + "'";
+             query += now.toISOString().split('T')[0] + "'"; //separamos por T,  ya que el formato ISO separa yyyy-dd-mm con la hora mediante una T
            }else{
              query+= p[1]+"'";
            }
@@ -164,9 +152,7 @@ else{
            case 'date[lt]': query+= " AND  date" + " < '";
            if(p[1]=="now"){
              var now = new Date();
-
              query += now.toISOString().split('T')[0] + "'";
-
            }else{
              query+= p[1]+ "'";
            }
@@ -193,63 +179,55 @@ else{
     //tim = 1;
   //}
 
-if(lim!=1 )   query+=querfinal;
+  if(lim!=1 )   query+=querfinal;  //en caso de no haber limit, añadimos la sentencia order by a la sentencia actual
 
   console.log(query);
 
-    timetablee = 0;
-    var striing
-     con.query(query, function(err,result){ //SQL consulta
-     if(err) res.end("error");
-     else{
-     //console.log(result);
-     striing = JSON.stringify(result);
+   timetablee = 0;
+   var striing
+   con.query(query, function(err,result){ //SQL consulta
+   if(err) res.end("error");  //Si existe error en la consulta (de formato) retorna error.
+    else{
+      striing = JSON.stringify(result);
 
-     //   var body = JSON.parse(striing);
+      res.statusCode=200; //200 por defecto es el número para peticiones con respuesta satisfactoria
+      res.setHeader('Content_Type','aplication/json');
+       
+      var data= "{"+ '"result":' + striing + "}"; //añadimos result ya que Ruby necesita un identificador para poder analizar las strings con formato Json
+    
+       
+      res.end(data);
+    }
+   });
 
-       res.statusCode=200;
-       res.setHeader('Content_Type','aplication/json');
-       //res.end(striing);
-       var data= "{"+ '"result":' + striing + "}";
-    //   console.log(striing);
-       console.log(data);
-       res.end(data);
-}
-     });
-
-    // res.write(striing);
-       //devolvemos el JSON al cliente
-   }
-
-}
-  });
+    
+  }
+ }
+});
 
 
 
 
-}else{
+}else{  //si no es request de get
 
   res.end();
 }
 }
 
-//starting server//
+//creamos el servidor mediante el protocolo http y le pasasmos como parametro la función que gestiona las peticiones
 
 const server = http.createServer(manage);
-//const app = express();
 
-server.listen (port, hostname, () =>{
+server.listen (port, hostname, () =>{  //servidor escuchando puerto e IP asignados
   console.log('Server running at http://%s:%d',hostname,port)
 });
-//app.listen (port,() =>{
-  //console.log('Server running at http://%d',port)
-//});
+
 
 
 //mySQL connection
 
 
-var con = mysql.createConnection({
+var con = mysql.createConnection({  //conexión SQL. Introducimos los datos de la BD y posteriormente nos conectamos con el método connect.
 host: process.env.DB_HOST || 'localhost',
 database: process.env.DB_DATABASE || 'PBE',
 user: process.env.DB_USER|| 'root',
@@ -257,10 +235,10 @@ password : process.env.DB_PASSWORD ||'Alex12345'
 });
 
 con.connect(function(err){
-  if(err) throw err;
+if(err) throw err;
   console.log("Connected MySQL");
 });
 
 
 
-//funcion para tener el post en un buffer
+
