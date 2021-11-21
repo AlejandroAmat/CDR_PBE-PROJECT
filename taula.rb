@@ -5,16 +5,16 @@ class Taula
   attr_accessor :taula
   @files 
   @columnes
-  def crearTaula(raw_data)
+ def crearTaula(raw_data)
     #puts raw_data
     @files=0
     @columnes=0
     
-    json = JSON.parse(raw_data)
-    resp = json["result"]
+    json = JSON.parse(raw_data)  #convertim el que rebem  del servidor a JSON
+    resp = json["result"]  #cogemos la información almacenada en la etiqueta result
     puts resp
    @files = resp.size
-    if @files!=0
+    if @files!=0   #En caso de no ser una resultado vacío
     @columnes = resp[0].size
     puts @files
     puts @columnes
@@ -22,7 +22,7 @@ class Taula
     @taula = Gtk::Table.new(@files, @columnes, true)
     i=0
      
-     loop do
+     loop do    #iteramos para cada fila y creamos las labels para cada atrubuto de la fila
      
         if i==@files
             break
@@ -33,13 +33,13 @@ class Taula
         puts labels 
         puts "labels"
         i=i+1
-      end
+     end
       return @taula
-  end
+   end
   return nil
   end
   
-  def crearLabels(hash)
+  def crearLabels(hash)    # para cada fila iteramos por el hash que proporciona JSON y creamos la label correspondiente. Lo metemos en el vector de labels que luego pasamos a la función afedgirfila
     labels=[]
     hash.each do |key, value|
       if key=="date"
@@ -56,28 +56,28 @@ class Taula
         end
       end
     end
-    return labels
+  return labels
   end
   
 
-  def afegirFila(labels, fila) 
+  def afegirFila(labels, fila)    # para cada vector de labels (las labels de cada fila) y una fila indicada añadimos a la tabla creada los correspondientes labels
     i =0
     loop do
     
-    if i==@columnes 
-        break
-    end
-    
-      @taula.attach(labels[i],i,i+1,fila, fila+1, nil, nil, 3, 3)
-      i=i+1
+     if i==@columnes 
+         break
+     end
+      
+     @taula.attach(labels[i],i,i+1,fila, fila+1, nil, nil, 3, 3)
+     i=i+1
 
-  end
+     end
   
-end
-  def numFiles
-      return @files
-end
-
+ end
+  
+ def numFiles
+    return @files
+ end
 end
 
 
