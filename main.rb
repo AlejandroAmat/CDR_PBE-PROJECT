@@ -14,7 +14,7 @@ class Finestra
       
 
         def initialize
-                #Variables d'interès
+                #Variables d'interès   #Inicialitzem les variables d'interés en el constructor. Creem la finestra principal.
                 @resposta=""
                 @req = ""
                 @rf= Rfid.new
@@ -48,7 +48,7 @@ class Finestra
         end
         
       def init
-        @window = Gtk::Window.new("Critical Design")
+        @window = Gtk::Window.new("Critical Design")    #funció que crea les variables de cada finestra que després , en funcio del estat mostrarà.
                 @window.set_title("Lector MFRC522")
                 @window.set_default_size(400,400)
                 @window.set_border_width(10)
@@ -58,8 +58,8 @@ class Finestra
                 @window2.set_default_size(400,400)
                 @window2.set_border_width(10)
                 @window2.set_window_position(:CENTER)
-                puts "HASTA AQUI LLEGA"        
-                startWindow1
+                      
+                startWindow1  #comença la finestra1 eur es d'on es parteix.
                
       end
       
@@ -69,9 +69,9 @@ class Finestra
                 #Configuració del label
                 
 
-    @label=Gtk::Label.new("Please put your card on the reader")
+   		 @label=Gtk::Label.new("Please put your card on the reader")
 
-    @label.override_font(@font)
+   		 @label.override_font(@font)
    
 
                 #Configuració del grid
@@ -80,14 +80,10 @@ class Finestra
                 @grid.set_column_homogeneous(true)
                 @grid.set_row_spacing(7)
                 @grid.attach(@label,0,0,5,5)
-
-               # @button=Gtk::Button.new(:label => "L")
-                #@button.signal_connect('clicked') {login("error")}
-               # @grid.attach(@button,1,0,9,1)
                 
                 @window.show_all
                 puts "Finestra creada"
-                self.newthread
+                self.newthread    #un cop mostrada la finestra crida a la funció encarregada de crear thread auxiliar encarregat de la gestió de lectura
 
       end
      
@@ -95,9 +91,9 @@ class Finestra
 
       def newthread
         tr=Thread.new {
-                get_user
-                puts "YA"
-                tr.exit
+                get_user   #es crea thread i cridem a la funció get_user que es per llegir la targeta de l'usuari
+                
+                tr.exit    
         }
 
       end
@@ -105,43 +101,43 @@ class Finestra
 
       def logout
 
-        req=HTTPX.get('http://172.20.10.2:4344?d?').to_str
+        req=HTTPX.get('http://172.20.10.2:4344?d?').to_str  # en cas d'apretar el botó logout s'envia get al servidor indicant desconexió.
         puts req #disconnected
-        @timer.stop
+        @timer.stop  #parem el timer perque sino surtiriem i el timer tornaria a fer el signal i poden haver problemes
         @timer.reset
-        #volver a la startWindow. eliminar Tablas actuales y volver a poner todo como estaba. Yo no sé
-        endWindow2
-        init
-        @timer.reset
+        
+        endWindow2  #tanquem finestra 2.
+        init        #cridem de nou a la inicialització
+        
 
 
       end
 
         def get_user
 
-          puts "Entro fil"
-          @uid = @rf.read_uid.to_s
+          
+          @uid = @rf.read_uid.to_s      #llegeix uid de RFID i envia request al servidor
           puts @uid
           @url = 'http://172.20.10.2:4344?' + @uid
           @resposta = HTTPX.get(@url).to_str
           
           puts @resposta
 
-          login(@resposta)
+          GLib::Idle.add(login(@resposta))   #es crida a la funció resposta però es delega al thread principal
 
 
 
-        end
+       end
 
           def login(resposta)
           puts resposta
 
-                if resposta.eql? 'error'
+                if resposta.eql? 'error'    #Si el servidor retorna error es que no s'ha trobat usuari. Es torna a llegir UID. funció startWIndow1
                         puts "Usuari no trobat"
                         startWindow1
 
                 else
-                        puts "WELCOME " + resposta
+                        puts "WELCOME " + resposta  #Si es reb un nom, es crea el timer, tanquem window1 i comencem la 2
                         timer_manage
                         endWindow1
                         puts "END Window1"
@@ -156,18 +152,19 @@ class Finestra
 
     def startWindow2
                 
+	        #afegim tots els elements UI necessaris
                 #@grid.remove_row(0)
                 #@grid.remove_column(0)
                 @grid2=Gtk::Grid.new
                 @window2.add(@grid2)
-                puts "llego aquí"
+               
                 #Creem la pagina d'inici
                 welcome = "WELCOME " + @resposta
                 @label2= Gtk::Label.new(welcome)
                 @label2.override_font(@font)
                 @button=Gtk::Button.new(:label => "Logout")
                 @button.signal_connect('clicked') {logout}
-                  puts "llego akix2"
+                  
                   
                   
                 @grid2.set_row_spacing(10)
@@ -182,60 +179,59 @@ class Finestra
                 
                 @grid2.attach(@search,0,7,10,1)
                 
-                puts "LLEGO AKIx3"
+                
                
                 @window2.show_all
                 
                 
                 
                 
-                  @search.signal_connect "activate" do |_widget|
-                        puts "LLEGO"
-                        @timer.stop
+                  @search.signal_connect "activate" do |_widget|   #Gestió de què succeeix quan enviem una query== s'activa el search bar
+                        
+                        @timer.stop  #reiniciem el timer
                         @timer.reset
                         @timer.start
-                        t = Thread.new{
+                        t = Thread.new{   #Creem un thread per gestionar el get i la resposta
 
                         @url = 'http://172.20.10.2:4344?' + @search.text
-                        @resposta = HTTPX.get(@url).to_str
-                        #@resposta= '{"result":[{"date":"2021-11-20T23:00:00.000Z","subject":"PBE","name":"Entrega Proyecto"},{"date":"2021-11-21T23:00:00.000Z","subject":"DSBM","name":"Memoria 4"},{"date":"2021-11-22T23:00:00.000Z","subject":"PBE","name":"Project Plan"},{"date":"2021-12-05T23:00:00.000Z","subject":"DSBM","name":"Memoria 5"},{"date":"2021-12-20T23:00:00.000Z","subject":"PBE","name":"Finale Report"}]}'
+                        @resposta = HTTPX.get(@url).to_str #passem a string per passarli a la funció crea Taula que esta com a classe al archiu Taula.rb
                         puts @resposta
                         t.exit
                         }
-                        #S'ha de crear un label vermell amb la @search.text.chomp(?).[0]
+                        
                         t.join
                         j=0
-                        if @files!=0
-							loop do
+                        if @files!=0   #en cas de que hi hagi una taula actual esborrem totes les files daquesta.
+			  loop do
      
-							if j==@files
-							break
-		                    end
-							@grid2.remove_row(14)
-							j=j+1
-						    end
-					    end
+			     if j==@files
+			     break
+		             end
+			   @grid2.remove_row(14)
+			   j=j+1
+			  end
+		         end
                          
-                         if @resposta.to_str != 'error'
+                         if @resposta.to_str != 'error' #en cas de rebre una sentencia correcte
 
                          @taulaobj = Taula.new
-                         @taula = @taulaobj.crearTaula(@resposta)
-                           if @taula != nil
+                         @taula = @taulaobj.crearTaula(@resposta)  #Creem la nova taula
+                           if @taula != nil  #En cas de no ser una taula buida (resposta buida) afegim la nova taula i files seran el numero de files d'aquesta
                               @files = @taulaobj.numFiles
                               @taula.set_hexpand(true)
-                             al2=Gtk::Align.new(3) 
-                             @taula.set_halign(al2)
-                            @grid2.attach(@taula,0,14,10,@files)
+                              al2=Gtk::Align.new(3) 
+                              @taula.set_halign(al2)
+                              @grid2.attach(@taula,0,14,10,@files)
                          
-                         @window2.show_all
+                               @window2.show_all
                           else
-                        puts "empty set"
+                          puts "empty set"
                           end
                         else
                         puts  "error in sql comprobation"
                         end
 
-                end
+                  end
 
               
       end
@@ -244,6 +240,7 @@ class Finestra
         @window.destroy
         
       end
+	
       def endWindow2
       @window2.destroy
       end
@@ -254,7 +251,7 @@ class Finestra
                endWindow2
                init
               
-               req=HTTPX.get('http://172.20.10.2:4344?d?').to_str
+               req=HTTPX.get('http://172.20.10.2:4344?d?').to_str  #envia request de desocnnexió
               
                
                
