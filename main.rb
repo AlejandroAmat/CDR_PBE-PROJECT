@@ -15,6 +15,10 @@ class Finestra
 
         def initialize
                 #Variables d'interès   #Inicialitzem les variables d'interés en el constructor. Creem la finestra principal.
+		
+                @css_provider= Gtk::CssProvider.new
+                @css_provider.load_from_path('stylesheet.css')
+                @style_prov = Gtk::StyleProvider::PRIORITY_USER
                 @resposta=""
                 @req = ""
                 @rf= Rfid.new
@@ -67,19 +71,19 @@ class Finestra
       def startWindow1
 
                 #Configuració del label
-                
-
-   		 @label=Gtk::Label.new("Please put your card on the reader")
-
-   		 @label.override_font(@font)
+                @label=Gtk::Label.new("Please put your card on the reader")
+                @label.override_font(@font)
+                @label.style_context.add_provider(@css_provider, @style_prov)
+                @label.set_name("uid")
    
 
                 #Configuració del grid
                 @grid = Gtk::Grid.new
                 @window.add(@grid)
                 @grid.set_column_homogeneous(true)
+                @grid.set_row_homogeneous(true)
                 @grid.set_row_spacing(7)
-                @grid.attach(@label,0,0,5,5)
+                @grid.attach(@label,5,0,5,5)
                 
                 @window.show_all
                 puts "Finestra creada"
@@ -152,34 +156,28 @@ class Finestra
 
     def startWindow2
                 
-	        #afegim tots els elements UI necessaris
-                #@grid.remove_row(0)
-                #@grid.remove_column(0)
-                @grid2=Gtk::Grid.new
+	        @grid2=Gtk::Grid.new
+                @search=Gtk::Entry.new
                 @window2.add(@grid2)
-               
+                
                 #Creem la pagina d'inici
                 welcome = "WELCOME " + @resposta
                 @label2= Gtk::Label.new(welcome)
                 @label2.override_font(@font)
+                @label2.style_context.add_provider(@css_provider, @style_prov)
+                @label2.set_name("lletra_blava")
                 @button=Gtk::Button.new(:label => "Logout")
                 @button.signal_connect('clicked') {logout}
-                  
-                  
-                  
+                
+                
                 @grid2.set_row_spacing(10)
                 al=Gtk::Align.new(2)
                 @button.set_halign(al)
                 @button.set_hexpand(true)
                 
-                @search=Gtk::Entry.new
-
                 @grid2.attach(@button,1,0,9,1)
                 @grid2.attach(@label2,0,0,1,1)
-                
                 @grid2.attach(@search,0,7,10,1)
-                
-                
                
                 @window2.show_all
                 
