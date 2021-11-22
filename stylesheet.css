@@ -1,0 +1,27 @@
+
+#fila0{
+    background-color: blue;
+    color:yellow
+}
+
+#fila_parell{
+    background-color: lightblue;
+}
+
+#fila_imparell{
+    background-color: lightcyan;
+}
+
+#lletravermella{
+    color: red
+}
+
+#lletrablava{
+    color:blue
+}
+
+#uid{
+    color: white;
+    background-color: blue;
+    padding: 3;
+}
