@@ -127,7 +127,7 @@ class Finestra
           
           puts @resposta
 
-          GLib::Idle.add(login(@resposta))   #es crida a la funció resposta però es delega al thread principal
+          GLib::Idle.add(login(@resposta))   #es crida a la funció login amb parametre resposta però es delega al thread principal
 
 
 
