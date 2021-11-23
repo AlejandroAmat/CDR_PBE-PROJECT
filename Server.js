@@ -92,9 +92,16 @@ else{
         var dayint = date.getDay() -1;
         //dayint = 2;
         if(dayint>4) dayint = 0;
-
-        querfinal = "ORDER BY CASE when daynum = "+ dayint +  " and hour >= '" + hour +"' then 0 when daynum = "+ (dayint+1)%5 +" then 1 when daynum= "+ (dayint+2)%5 +" then 2 when daynum= "+ (dayint+3)%5 +" then 3 when daynum= "+ (dayint+4)%5 +" then 4 when daynum";
-        querfinal += "= " + dayint +" AND hour< '" + hour + "' then 5 end";
+           queryfinal = "ORDER BY CASE ";
+          
+          for(int i =0; i<6; i++){   //ordenacio dels dies i hores
+          queryfinal+= " when daynum = " + (dayint + i) %5 ;
+            if(i==0) queryfinal += "and hour >= '" + hour + "'";
+            if(i==5) queryfinal += "and hour < '" + hour + "'";
+          queryfinal+= "then "+ i;
+            
+          }        
+    
         break;
         case 'tasks': query += "date, subject, name";
         querfinal=" ORDER BY date ASC";
